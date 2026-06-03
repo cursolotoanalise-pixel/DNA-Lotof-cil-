@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DNA 🧬 Lotofácil — Gerador Inteligente de Jogos</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #00e676;
+    --green-dim: #00c853;
+    --gold: #ffd600;
+    --dark: #060a0f;
+    --dark2: #0d1520;
+    --dark3: #111c2a;
+    --card: #0f1e2e;
+    --border: rgba(0,230,118,0.15);
+    --text: #c8d8e8;
+    --white: #eaf4ff;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--dark);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    min-height: 100vh;
+    background: 
+      radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0,230,118,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 40% at 80% 80%, rgba(0,100,200,0.06) 0%, transparent 60%),
+      var(--dark);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 60px 20px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: 
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0,230,118,0.03) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0,230,118,0.03) 40px);
+    pointer-events: none;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,230,118,0.1);
+    border: 1px solid rgba(0,230,118,0.3);
+    border-radius: 100px;
+    padding: 6px 16px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    animation: fadeDown 0.6s ease;
+  }
+
+  .badge-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--green);
+    animation: pulse 1.5s infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(1.4); }
+  }
+
+  .dna-icon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    animation: floatY 3s ease-in-out infinite;
+    filter: drop-shadow(0 0 20px rgba(0,230,118,0.4));
+  }
+
+  @keyframes floatY {
+    0%,100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  .hero h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 14vw, 96px);
+    line-height: 0.95;
+    color: var(--white);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    animation: fadeUp 0.7s ease 0.1s both;
+  }
+
+  .hero h1 span {
+    color: var(--green);
+    text-shadow: 0 0 30px rgba(0,230,118,0.5);
+  }
+
+  .hero-sub {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: clamp(18px, 4vw, 26px);
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+    animation: fadeUp 0.7s ease 0.2s both;
+  }
+
+  .hero p {
+    font-size: 16px;
+    line-height: 1.7;
+    max-width: 520px;
+    color: var(--text);
+    margin-bottom: 36px;
+    animation: fadeUp 0.7s ease 0.3s both;
+  }
+
+  .hero p strong {
+    color: var(--white);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── CTA BUTTON ── */
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, var(--green), var(--green-dim));
+    color: #000;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 18px 36px;
+    border-radius: 8px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 30px rgba(0,230,118,0.35);
+    animation: fadeUp 0.7s ease 0.4s both;
+  }
+
+  .cta-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(0,230,118,0.5); }
+  .cta-btn:hover::before { opacity: 1; }
+  .cta-btn:active { transform: translateY(0); }
+
+  .price-hint {
+    margin-top: 14px;
+    font-size: 13px;
+    color: rgba(200,216,232,0.5);
+    animation: fadeUp 0.7s ease 0.5s both;
+  }
+
+  .price-hint strong {
+    color: var(--gold);
+    font-size: 20px;
+  }
+
+  /* ── URGENCY BAR ── */
+  .urgency {
+    background: linear-gradient(90deg, #1a0a00, #2a1200, #1a0a00);
+    border-top: 1px solid rgba(255,214,0,0.2);
+    border-bottom: 1px solid rgba(255,214,0,0.2);
+    padding: 12px 20px;
+    text-align: center;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gold);
+    letter-spacing: 1px;
+  }
+
+  /* ── SECTION ── */
+  section {
+    padding: 64px 20px;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 12px;
+  }
+
+  h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(36px, 8vw, 56px);
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+  }
+
+  h2 span { color: var(--green); }
+
+  /* ── FEATURES ── */
+  .features { background: var(--dark2); padding: 64px 20px; }
+  .features-inner { max-width: 680px; margin: 0 auto; }
+
+  .feat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 36px;
+  }
+
+  .feat-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px 20px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .feat-card:hover {
+    border-color: rgba(0,230,118,0.4);
+    transform: translateY(-3px);
+  }
+
+  .feat-icon { font-size: 28px; margin-bottom: 12px; }
+
+  .feat-card h3 {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .feat-card p {
+    font-size: 13px;
+    line-height: 1.6;
+    color: rgba(200,216,232,0.7);
+  }
+
+  /* ── PROOF ── */
+  .proof-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 32px;
+  }
+
+  .proof-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 20px 20px 24px;
+    border-left: 3px solid var(--green);
+    position: relative;
+  }
+
+  .proof-text {
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--text);
+    margin-bottom: 12px;
+    font-style: italic;
+  }
+
+  .proof-author {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 0.5px;
+  }
+
+  /* ── NUMBERS ── */
+  .numbers {
+    background: var(--dark3);
+    border-top: 1px solid rgba(0,230,118,0.08);
+    border-bottom: 1px solid rgba(0,230,118,0.08);
+    padding: 48px 20px;
+  }
+
+  .num-grid {
+    max-width: 680px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    text-align: center;
+  }
+
+  .num-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(40px, 10vw, 64px);
+    color: var(--green);
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(0,230,118,0.3);
+  }
+
+  .num-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: rgba(200,216,232,0.5);
+    margin-top: 4px;
+  }
+
+  /* ── PRICING ── */
+  .pricing-box {
+    background: var(--card);
+    border: 1px solid rgba(0,230,118,0.25);
+    border-radius: 16px;
+    padding: 36px 28px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    margin-top: 36px;
+  }
+
+  .pricing-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--green), var(--green-dim), var(--gold));
+  }
+
+  .price-old {
+    font-size: 15px;
+    color: rgba(200,216,232,0.4);
+    text-decoration: line-through;
+    margin-bottom: 4px;
+  }
+
+  .price-main {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 72px;
+    color: var(--green);
+    line-height: 1;
+    text-shadow: 0 0 30px rgba(0,230,118,0.4);
+  }
+
+  .price-period {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    color: rgba(200,216,232,0.5);
+    margin-bottom: 24px;
+    letter-spacing: 1px;
+  }
+
+  .price-includes {
+    list-style: none;
+    text-align: left;
+    margin: 20px 0 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .price-includes li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    color: var(--text);
+  }
+
+  .price-includes li::before {
+    content: '✓';
+    color: var(--green);
+    font-weight: 700;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .guarantee {
+    margin-top: 16px;
+    font-size: 12px;
+    color: rgba(200,216,232,0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+
+  /* ── FAQ ── */
+  .faq-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 32px;
+  }
+
+  .faq-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .faq-q {
+    padding: 18px 20px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--white);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    user-select: none;
+  }
+
+  .faq-q .arr { 
+    transition: transform 0.3s; 
+    color: var(--green);
+    font-size: 18px;
+  }
+
+  .faq-item.open .arr { transform: rotate(180deg); }
+
+  .faq-a {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s;
+    font-size: 14px;
+    line-height: 1.7;
+    color: rgba(200,216,232,0.7);
+    padding: 0 20px;
+  }
+
+  .faq-item.open .faq-a {
+    max-height: 200px;
+    padding: 0 20px 18px;
+  }
+
+  /* ── FOOTER CTA ── */
+  .footer-cta {
+    background: 
+      radial-gradient(ellipse 80% 100% at 50% 50%, rgba(0,230,118,0.06) 0%, transparent 70%),
+      var(--dark2);
+    padding: 72px 20px;
+    text-align: center;
+    border-top: 1px solid rgba(0,230,118,0.08);
+  }
+
+  .footer-cta h2 {
+    margin-bottom: 16px;
+  }
+
+  .footer-cta p {
+    font-size: 15px;
+    color: var(--text);
+    max-width: 440px;
+    margin: 0 auto 32px;
+    line-height: 1.7;
+  }
+
+  footer {
+    background: var(--dark);
+    border-top: 1px solid rgba(255,255,255,0.05);
+    padding: 24px 20px;
+    text-align: center;
+    font-size: 12px;
+    color: rgba(200,216,232,0.3);
+  }
+
+  footer a { color: rgba(200,216,232,0.4); }
+
+  /* ── MOBILE ── */
+  @media (max-width: 480px) {
+    .feat-grid { grid-template-columns: 1fr; }
+    .num-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .num-val { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- URGENCY BAR -->
+<div class="urgency">
+  🔥 ACESSO LIBERADO ONTEM GRATUITAMENTE — OFERTA DE LANÇAMENTO ENCERRA EM BREVE
+</div>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="badge">
+    <span class="badge-dot"></span>
+    Novo · Análise Inteligente de Lotofácil
+  </div>
+  <div class="dna-icon">🧬</div>
+  <h1>DNA<br><span>LOTOFÁCIL</span></h1>
+  <div class="hero-sub">Gerador · Conferidor · Análise</div>
+  <p>
+    Gere jogos com <strong>equilíbrio matemático</strong>, salve suas apostas e confira o resultado oficial da Caixa — tudo no celular, em segundos.
+  </p>
+  <a href="https://pay.cakto.com.br/tdhndok_909816" class="cta-btn">
+    ⚡ Quero Acesso Agora
+  </a>
+  <p class="price-hint">Acesso completo por apenas <strong>R$ 47,90</strong></p>
+</div>
+
+<!-- NUMBERS -->
+<div class="numbers">
+  <div class="num-grid">
+    <div>
+      <div class="num-val">3</div>
+      <div class="num-label">Tipos de Jogo</div>
+    </div>
+    <div>
+      <div class="num-val">100%</div>
+      <div class="num-label">No Celular</div>
+    </div>
+    <div>
+      <div class="num-val">7</div>
+      <div class="num-label">Dias Garantia</div>
+    </div>
+  </div>
+</div>
+
+<!-- FEATURES -->
+<div class="features">
+  <div class="features-inner">
+    <div class="section-label">O que você recebe</div>
+    <h2>TUDO QUE VOCÊ<br><span>PRECISA</span></h2>
+
+    <div class="feat-grid">
+      <div class="feat-card">
+        <div class="feat-icon">⚡</div>
+        <h3>Gerador Inteligente</h3>
+        <p>Jogos de 15, 16 ou 17 números com equilíbrio matemático automático.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">💾</div>
+        <h3>Salvar Jogos</h3>
+        <p>Guarda suas apostas por concurso. Acesse quando quiser.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔍</div>
+        <h3>Conferidor Automático</h3>
+        <p>Confere todos os seus jogos contra o resultado oficial da Caixa.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📡</div>
+        <h3>Resultado em Tempo Real</h3>
+        <p>Último concurso atualizado direto da Caixa Econômica Federal.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📱</div>
+        <h3>100% Mobile</h3>
+        <p>Funciona perfeito no celular. Sem instalar nada, sem complicação.</p>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">💰</div>
+        <h3>Simulador de Custo</h3>
+        <p>Calcula quanto você vai gastar antes de apostar.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PROOF -->
+<section>
+  <div class="section-label">Quem já testou</div>
+  <h2>O QUE ESTÃO<br><span>DIZENDO</span></h2>
+  <div class="proof-grid">
+    <div class="proof-card">
+      <p class="proof-text">"Testei ontem no grupo e fiquei impressionado. Gerei 14 jogos em menos de 1 minuto e já conferi o resultado. Ferramenta incrível."</p>
+      <div class="proof-author">— Membro do grupo Lotofácil Brasil</div>
+    </div>
+    <div class="proof-card">
+      <p class="proof-text">"Nunca vi algo assim de graça. Agora que tem o acesso pago vai valer muito mais a pena, quero os recursos completos."</p>
+      <div class="proof-author">— Apostador de Minas Gerais</div>
+    </div>
+    <div class="proof-card">
+      <p class="proof-text">"O conferidor automático é o que eu precisava. Antes era tudo na mão. Agora é só clicar."</p>
+      <div class="proof-author">— Apostador de São Paulo</div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section style="padding-top: 0;">
+  <div class="section-label">Investimento</div>
+  <h2>ACESSO<br><span>COMPLETO</span></h2>
+
+  <div class="pricing-box">
+    <div class="price-old">De R$ 97,00</div>
+    <div class="price-main">R$47,90</div>
+    <div class="price-period">PAGAMENTO ÚNICO · ACESSO VITALÍCIO</div>
+
+    <ul class="price-includes">
+      <li>Gerador de jogos 15, 16 e 17 números</li>
+      <li>Conferidor automático com resultado oficial</li>
+      <li>Salvamento ilimitado de jogos</li>
+      <li>Simulador de custo por concurso</li>
+      <li>Resultado atualizado em tempo real</li>
+      <li>Acesso via celular — sem instalar nada</li>
+      <li>Suporte via e-mail</li>
+    </ul>
+
+    <a href="https://pay.cakto.com.br/tdhndok_909816" class="cta-btn" style="width:100%;justify-content:center;font-size:20px;">
+      ⚡ QUERO ACESSO AGORA
+    </a>
+
+    <div class="guarantee">🔒 Garantia de 7 dias. Se não gostar, devolvemos 100% do valor.</div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section style="padding-top: 0;">
+  <div class="section-label">Dúvidas</div>
+  <h2>PERGUNTAS<br><span>FREQUENTES</span></h2>
+
+  <div class="faq-list">
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        Como acesso o app após a compra?
+        <span class="arr">▾</span>
+      </div>
+      <div class="faq-a">Imediatamente após o pagamento você recebe o link de acesso por e-mail. É só clicar e usar no celular.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        Precisa instalar alguma coisa?
+        <span class="arr">▾</span>
+      </div>
+      <div class="faq-a">Não. O DNA Lotofácil funciona diretamente no navegador do seu celular. Sem baixar nada.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        O gerador garante premiação?
+        <span class="arr">▾</span>
+      </div>
+      <div class="faq-a">Não. Loteria é sorte. O gerador cria jogos com equilíbrio matemático entre pares/ímpares e primos, o que é uma estratégia popular entre apostadores — mas não há garantia de prêmio.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        Qual a forma de pagamento?
+        <span class="arr">▾</span>
+      </div>
+      <div class="faq-a">Cartão de crédito, Pix e boleto — processado com segurança pela Caktos.</div>
+    </div>
+    <div class="faq-item">
+      <div class="faq-q" onclick="toggleFaq(this)">
+        E se eu não gostar?
+        <span class="arr">▾</span>
+      </div>
+      <div class="faq-a">Você tem 7 dias de garantia incondicional. Basta solicitar o reembolso e devolvemos 100% do valor, sem perguntas.</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER CTA -->
+<div class="footer-cta">
+  <h2>PRONTO PARA<br><span>JOGAR MELHOR?</span></h2>
+  <p>Mais de 100 apostadores já testaram o app. Agora é a sua vez de ter acesso completo.</p>
+  <a href="https://pay.cakto.com.br/tdhndok_909816" class="cta-btn" style="font-size:20px;">
+    🧬 QUERO MEU ACESSO
+  </a>
+  <p style="margin-top:14px;font-size:13px;color:rgba(200,216,232,0.4);">
+    Acesso vitalício · R$ 47,90 · 7 dias de garantia
+  </p>
+</div>
+
+<footer>
+  <p>DNA Lotofácil — Ferramenta de análise e geração de jogos para entretenimento.<br>
+  Não somos afiliados à Caixa Econômica Federal. Loteria envolve risco.<br>
+  Suporte: <a href="mailto:gladson_mota76@outlook.com">gladson_mota76@outlook.com</a></p>
+</footer>
+
+<script>
+  function toggleFaq(el) {
+    const item = el.parentElement;
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  }
+</script>
+</body>
+</html>
