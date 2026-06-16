@@ -243,26 +243,32 @@ footer{padding:32px 20px;text-align:center;border-top:1px solid rgba(255,255,255
       </div>
 
       <span class="config-label">Modo de geração</span>
+      <div id="api-status" style="font-size:10px;color:var(--gold);text-align:center;margin-bottom:10px;padding:6px;background:var(--dark3);border-radius:8px;border:1px solid rgba(245,197,24,.15)">⏳ Conectando à Caixa Econômica Federal...</div>
       <div class="modo-row">
         <div class="modo-card sel" onclick="selModo('m14',this)">
           <div class="mc-ico">🎯</div>
-          <div class="mc-name">FOCO 14 PTS</div>
-          <div class="mc-desc">Filtros calibrados para 14 pontos</div>
+          <div class="mc-name">RIGOROSO 14</div>
+          <div class="mc-desc">9 filtros · foco 14 pts</div>
         </div>
         <div class="modo-card" onclick="selModo('m15',this)">
           <div class="mc-ico">🏆</div>
-          <div class="mc-name">FOCO 15 PTS</div>
-          <div class="mc-desc">Máxima cobertura das quentes</div>
+          <div class="mc-name">RIGOROSO 15</div>
+          <div class="mc-desc">9 filtros · foco 15 pts</div>
+        </div>
+        <div class="modo-card" onclick="selModo('rigoroso',this)">
+          <div class="mc-ico">🔬</div>
+          <div class="mc-name">ULTRA RIGOROSO</div>
+          <div class="mc-desc">Máximo rigor estatístico</div>
         </div>
         <div class="modo-card" onclick="selModo('m13',this)">
           <div class="mc-ico">⚡</div>
           <div class="mc-name">FOCO 13 PTS</div>
-          <div class="mc-desc">Alta frequência, menor custo</div>
+          <div class="mc-desc">Alta frequência</div>
         </div>
         <div class="modo-card" onclick="selModo('livre',this)">
           <div class="mc-ico">🎲</div>
           <div class="mc-name">LIVRE</div>
-          <div class="mc-desc">Sem filtros — aleatório puro</div>
+          <div class="mc-desc">Aleatório puro</div>
         </div>
       </div>
 
@@ -454,18 +460,55 @@ const FILTROS = {
   SEQ_MAX: 2
 };
 
-// Pesos de seleção — dezenas mais quentes têm peso maior
-// Calibrado para garantir presença equilibrada
-function pesoBase(n) {
-  return (FREQ[n] - 1050) / 110; // normalizado 0-1 aprox
+
+// ══════════════════════════════════════════════
+//  CONSTANTES DOS 9 FILTROS AVANÇADOS
+// ══════════════════════════════════════════════
+const MOLDURA = [1,2,3,4,5,6,10,11,15,16,20,21,22,23,24,25];
+const MIOLO   = [7,8,9,12,13,14,17,18,19];
+const MULT3   = [3,6,9,12,15,18,21,24];
+
+// FILTRO 9 — Atraso das Dezenas
+const ATRASO = {1:2,2:4,3:1,4:3,5:2,6:5,7:6,8:7,9:3,10:1,11:2,12:8,13:1,14:2,15:3,16:9,17:4,18:2,19:3,20:1,21:5,22:4,23:6,24:2,25:1};
+
+// ══════════════════════════════════════════════
+//  API CAIXA — carrega último resultado
+// ══════════════════════════════════════════════
+let ultimoResultado = {concurso:null,numeros:[],data:null,carregado:false};
+
+async function carregarUltimoResultado(){
+  const badge=document.getElementById('api-status');
+  if(badge){badge.textContent='⏳ Conectando à Caixa...';badge.style.color='#F5C518';}
+  const ENDPOINTS=[
+    'https://servicebus2.caixa.gov.br/portaldeloterias/api/lotofacil',
+    'https://loteriascaixa-api.herokuapp.com/api/lotofacil/latest',
+  ];
+  for(const url of ENDPOINTS){
+    try{
+      const r=await fetch(url,{headers:{'Accept':'application/json'}});
+      if(!r.ok) continue;
+      const d=await r.json();
+      const nums=(d.dezenasSorteadasOrdemSorteio||d.listaDezenas||d.dezenas||[]).map(Number).filter(Boolean);
+      if(nums.length===15){
+        ultimoResultado={concurso:d.numero||d.concurso,numeros:nums,data:d.dataApuracao||d.data,carregado:true};
+        if(badge){badge.textContent=`✅ Concurso ${ultimoResultado.concurso} · ${ultimoResultado.data}`;badge.style.color='#22C55E';}
+        // Atualiza atraso com o resultado real
+        for(let n=1;n<=25;n++) ATRASO[n]=nums.includes(n)?0:Math.min((ATRASO[n]||0)+1,10);
+        return;
+      }
+    }catch(e){}
+  }
+  ultimoResultado={concurso:'3279',numeros:[1,2,3,4,5,6,9,12,13,14,15,16,17,18,25],data:'15/06/2026',carregado:false};
+  if(badge){badge.textContent='⚠️ Offline — resultado local';badge.style.color='#F97316';}
 }
 
-let cfg = {nums:15, qtd:14, modo:'m14'};
-let salvos = [];
-try { salvos = JSON.parse(localStorage.getItem('dna_salvos')||'[]'); } catch(e){}
-let dezSel = new Set(), manSel = new Set();
+function pesoBase(n){ return (FREQ[n]-1050)/110; }
 
-// ─── TABS ───
+let cfg={nums:15,qtd:14,modo:'m14'};
+let salvos=[];
+try{salvos=JSON.parse(localStorage.getItem('dna_salvos')||'[]');}catch(e){}
+let dezSel=new Set(), manSel=new Set();
+
 function aba(id,el){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -476,8 +519,6 @@ function aba(id,el){
   if(id==='salvos')   renderSalvos();
   if(id==='ebook')    renderEbook();
 }
-
-// ─── CONFIG ───
 function sel(tipo,val,el){
   cfg[tipo]=val;
   el.closest('.btn-group').querySelectorAll('.opt-btn').forEach(b=>b.classList.remove('sel'));
@@ -498,154 +539,162 @@ function atualizarPreco(){
 }
 function atualizarFiltroInfo(modo){
   const textos={
-    m14:'🎯 <b>Foco 14 pontos:</b> Pares 6-9 · Primos 3-6 · Tier1 ≥4 · Soma 175-215 · Máx 80% sobreposição entre jogos',
-    m15:'🏆 <b>Foco 15 pontos:</b> Pares 7-8 · Primos 4-5 · Tier1 ≥5 · Soma 180-210 · Filtros mais rígidos',
-    m13:'⚡ <b>Foco 13 pontos:</b> Pares 6-9 · Primos 3-6 · Tier1 ≥3 · Soma 165-225 · Maior diversidade',
-    livre:'🎲 <b>Livre:</b> Sem filtros estatísticos. Seleção aleatória pura.'
+    m15:'🏆 <b>Rigoroso 15pts:</b> Pares 7-8 · Primos 4-5 · Fibonacci 3-5 · Soma 180-210 · Moldura 9-11 · Miolo 4-6 · Consecutivos ≤1 · Mult3 3-6 · Repetência 8-10',
+    m14:'🎯 <b>Rigoroso 14pts:</b> Pares 6-9 · Primos 3-6 · Fibonacci 2-6 · Soma 175-215 · Moldura 8-12 · Consecutivos ≤2 · Mult3 3-7 · Repetência 7-11',
+    m13:'⚡ <b>Foco 13pts:</b> Pares 5-10 · Primos 2-7 · Soma 165-225 · Moldura 7-13 · Alta diversidade',
+    rigoroso:'🔬 <b>Ultra Rigoroso:</b> TODOS os 9 filtros no máximo rigor · Jogos de altíssima qualidade estatística',
+    livre:'🎲 <b>Livre:</b> Sem filtros. Seleção aleatória pura.'
   };
   document.getElementById('filtro-info').innerHTML=textos[modo]||'';
 }
 
 // ══════════════════════════════════════════════
-//  VALIDAÇÃO DE JOGO — coração do sistema
+//  OS 9 FILTROS — VALIDAÇÃO COMPLETA
 // ══════════════════════════════════════════════
-function validarJogo(jogo, modo) {
-  const n = jogo.length;
-  const pares  = jogo.filter(x=>x%2===0).length;
-  const primos = jogo.filter(x=>PRIMOS.includes(x)).length;
-  const fibs   = jogo.filter(x=>FIBONACCI.includes(x)).length;
-  const t1     = jogo.filter(x=>TIER1.includes(x)).length;
-  const t3     = jogo.filter(x=>TIER3.includes(x)).length;
-  const soma   = jogo.reduce((a,b)=>a+b,0);
-
-  // Sequências longas (3+)
-  const sorted = [...jogo].sort((a,b)=>a-b);
-  let seqs=0,streak=1;
+function analisarJogo(jogo){
+  const sorted=[...jogo].sort((a,b)=>a-b);
+  const pares  =jogo.filter(x=>x%2===0).length;
+  const primos =jogo.filter(x=>PRIMOS.includes(x)).length;
+  const fibs   =jogo.filter(x=>FIBONACCI.includes(x)).length;
+  const moldura=jogo.filter(x=>MOLDURA.includes(x)).length;
+  const miolo  =jogo.filter(x=>MIOLO.includes(x)).length;
+  const mult3  =jogo.filter(x=>MULT3.includes(x)).length;
+  const t1     =jogo.filter(x=>TIER1.includes(x)).length;
+  const t3     =jogo.filter(x=>TIER3.includes(x)).length;
+  const soma   =jogo.reduce((a,b)=>a+b,0);
+  // Consecutivos
+  let consec=0,streak=1;
   for(let i=1;i<sorted.length;i++){
-    if(sorted[i]===sorted[i-1]+1){ streak++; if(streak===3) seqs++; }
+    if(sorted[i]===sorted[i-1]+1){streak++;if(streak===3)consec++;}
     else streak=1;
   }
+  const repetentes=ultimoResultado.numeros.length>0?jogo.filter(n=>ultimoResultado.numeros.includes(n)).length:8;
+  return{pares,primos,fibs,moldura,miolo,mult3,t1,t3,soma,consec,repetentes};
+}
 
-  if(modo==='m15'){
-    if(pares<7||pares>8) return false;
-    if(primos<4||primos>5) return false;
-    if(t1<5) return false;
-    if(soma<180||soma>210) return false;
-    if(seqs>1) return false;
-    if(t3<1||t3>3) return false;
+function validarJogo(jogo,modo){
+  const a=analisarJogo(jogo);
+  if(modo==='rigoroso'){
+    if(a.pares<6||a.pares>8)return false;       // F1 Paridade
+    if(a.moldura<9||a.moldura>11)return false;  // F2 Moldura
+    if(a.primos<4||a.primos>5)return false;     // F3 Primos
+    if(a.fibs<3||a.fibs>5)return false;         // F4 Fibonacci
+    if(a.soma<182||a.soma>208)return false;     // F5 Soma
+    if(ultimoResultado.carregado&&(a.repetentes<8||a.repetentes>10))return false; // F6
+    if(a.consec>1)return false;                 // F7 Consecutivos
+    if(a.mult3<4||a.mult3>6)return false;       // F8 Mult3
+    if(a.t1<5)return false;                     // Tier
+    if(a.t3<1||a.t3>2)return false;
+  } else if(modo==='m15'){
+    if(a.pares<7||a.pares>8)return false;
+    if(a.moldura<9||a.moldura>11)return false;
+    if(a.primos<4||a.primos>5)return false;
+    if(a.fibs<3||a.fibs>5)return false;
+    if(a.soma<180||a.soma>210)return false;
+    if(ultimoResultado.carregado&&(a.repetentes<8||a.repetentes>10))return false;
+    if(a.consec>1)return false;
+    if(a.mult3<3||a.mult3>6)return false;
+    if(a.t1<5)return false;
+    if(a.t3<1||a.t3>3)return false;
   } else if(modo==='m14'){
-    if(pares<6||pares>9) return false;
-    if(primos<3||primos>6) return false;
-    if(t1<4) return false;
-    if(soma<175||soma>215) return false;
-    if(seqs>2) return false;
-    if(t3<1||t3>3) return false;
+    if(a.pares<6||a.pares>9)return false;
+    if(a.moldura<8||a.moldura>12)return false;
+    if(a.primos<3||a.primos>6)return false;
+    if(a.fibs<2||a.fibs>6)return false;
+    if(a.soma<175||a.soma>215)return false;
+    if(ultimoResultado.carregado&&(a.repetentes<7||a.repetentes>11))return false;
+    if(a.consec>2)return false;
+    if(a.mult3<3||a.mult3>7)return false;
+    if(a.t1<4)return false;
+    if(a.t3<1||a.t3>3)return false;
   } else if(modo==='m13'){
-    if(pares<5||pares>10) return false;
-    if(primos<2||primos>7) return false;
-    if(t1<3) return false;
-    if(soma<165||soma>225) return false;
-    if(seqs>3) return false;
+    if(a.pares<5||a.pares>10)return false;
+    if(a.moldura<7||a.moldura>13)return false;
+    if(a.primos<2||a.primos>7)return false;
+    if(a.fibs<1||a.fibs>7)return false;
+    if(a.soma<165||a.soma>225)return false;
+    if(a.consec>3)return false;
+    if(a.t1<3)return false;
   }
-  // Filtro universal: não pode ter 0 frias nem 0 quentes extremos
-  if(t1===0) return false;
-  if(fibs<1) return false;
+  if(a.t1===0)return false;
+  if(a.fibs<1)return false;
   return true;
 }
 
-// Sobreposição entre dois jogos (% em comum)
-function sobreposicao(j1, j2) {
-  return j1.filter(n=>j2.includes(n)).length / j1.length;
-}
+function sobreposicao(j1,j2){return j1.filter(n=>j2.includes(n)).length/j1.length;}
 
 // ══════════════════════════════════════════════
-//  GERADOR PRINCIPAL — algoritmo 80 candidatos
+//  GERADOR com FILTRO 9 — ATRASO DAS DEZENAS
 // ══════════════════════════════════════════════
 function gerarJogos(){
   const btn=document.getElementById('btn-gerar');
-  btn.disabled=true; btn.textContent='⏳ Gerando...';
+  btn.disabled=true;btn.textContent='⏳ Gerando...';
   setTimeout(()=>{
     const jogos=[];
-    const MAX_TENTATIVAS=2000;
-    const MAX_SOBREP=0.80; // máx 80% igual entre dois jogos
-    let tentativas=0, falhas=0;
-
-    while(jogos.length<cfg.qtd && tentativas<MAX_TENTATIVAS){
-      tentativas++;
-      const candidato = cfg.modo==='livre' ? gerarAleatorio(cfg.nums) : gerarCandidato(cfg.nums, cfg.modo, jogos);
-      if(!candidato) { falhas++; continue; }
-
-      const ok = cfg.modo==='livre' || validarJogo(candidato, cfg.modo);
-      if(!ok) { falhas++; continue; }
-
-      // Verificar sobreposição com jogos já gerados
-      const temSobreposicaoAlta = jogos.some(j=>sobreposicao(candidato,j)>MAX_SOBREP);
-      if(temSobreposicaoAlta) { falhas++; continue; }
-
-      jogos.push(candidato.sort((a,b)=>a-b));
+    const MAX=cfg.modo==='rigoroso'?6000:2000;
+    let tent=0,falhas=0;
+    while(jogos.length<cfg.qtd&&tent<MAX){
+      tent++;
+      const cand=cfg.modo==='livre'?gerarAleatorio(cfg.nums):gerarCandidato(cfg.nums,cfg.modo,jogos);
+      if(!cand){falhas++;continue;}
+      const ok=cfg.modo==='livre'||validarJogo(cand,cfg.modo);
+      if(!ok){falhas++;continue;}
+      if(jogos.some(j=>sobreposicao(cand,j)>0.80)){falhas++;continue;}
+      jogos.push(cand.sort((a,b)=>a-b));
     }
-
-    renderJogos(jogos, tentativas, falhas);
-    btn.disabled=false; btn.textContent='⚡ GERAR NOVOS JOGOS';
+    renderJogos(jogos,tent,falhas);
+    btn.disabled=false;btn.textContent='⚡ GERAR NOVOS JOGOS';
   },200);
 }
 
-// Gera um candidato enviesado para o modo escolhido
-function gerarCandidato(size, modo, jogosExistentes) {
-  // Pool inicial: ordena todas as dezenas por peso + ruído
-  const pool = Array.from({length:25},(_,i)=>i+1).map(n=>{
-    let peso = pesoBase(n);
-
-    // Ajuste de peso por modo
-    if(modo==='m15'){
-      if(TIER1.includes(n)) peso+=0.4;
-      if(TIER3.includes(n)) peso-=0.1;
+function gerarCandidato(size,modo,jogosExistentes){
+  const pool=Array.from({length:25},(_,i)=>i+1).map(n=>{
+    let peso=pesoBase(n);
+    // F9 — Atraso
+    peso+=(ATRASO[n]||0)*0.04;
+    if(modo==='rigoroso'||modo==='m15'){
+      if(TIER1.includes(n))peso+=0.5;
+      if(MOLDURA.includes(n))peso+=0.2;
+      if(PRIMOS.includes(n))peso+=0.15;
+      if(FIBONACCI.includes(n))peso+=0.12;
+      if(TIER3.includes(n))peso-=0.15;
     } else if(modo==='m14'){
-      if(TIER1.includes(n)) peso+=0.3;
-      if(TIER2.includes(n)) peso+=0.1;
+      if(TIER1.includes(n))peso+=0.35;
+      if(TIER2.includes(n))peso+=0.12;
+      if(MOLDURA.includes(n))peso+=0.1;
+      if(PRIMOS.includes(n))peso+=0.1;
     } else if(modo==='m13'){
-      if(TIER1.includes(n)) peso+=0.2;
-      if(TIER2.includes(n)) peso+=0.15;
-      if(TIER3.includes(n)) peso+=0.05;
+      if(TIER1.includes(n))peso+=0.2;
+      if(TIER2.includes(n))peso+=0.15;
+      if(TIER3.includes(n))peso+=0.05;
     }
-
-    // Penalidade: dezenas muito usadas nos jogos anteriores
     if(jogosExistentes.length>0){
-      const usos = jogosExistentes.filter(j=>j.includes(n)).length;
-      peso -= (usos/jogosExistentes.length)*0.3;
+      const usos=jogosExistentes.filter(j=>j.includes(n)).length;
+      peso-=(usos/jogosExistentes.length)*0.3;
     }
-
-    return {n, w: peso + Math.random()*0.5};
+    if(ultimoResultado.numeros.includes(n))peso+=0.1;
+    return{n,w:peso+Math.random()*0.45};
   });
-
-  // Ordena por peso
   pool.sort((a,b)=>b.w-a.w);
-
-  // Seleciona os top (size+6) e embaralha levemente para diversidade
-  const candidatos = pool.slice(0, size+8).map(x=>x.n);
-  embaralhar(candidatos);
-  return candidatos.slice(0, size);
+  const cands=pool.slice(0,size+8).map(x=>x.n);
+  embaralhar(cands);
+  return cands.slice(0,size);
 }
 
-function gerarAleatorio(size) {
-  const todos=Array.from({length:25},(_,i)=>i+1);
-  embaralhar(todos);
-  return todos.slice(0,size);
+function gerarAleatorio(size){
+  const t=Array.from({length:25},(_,i)=>i+1);
+  embaralhar(t);return t.slice(0,size);
 }
-
 function embaralhar(arr){
-  for(let i=arr.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [arr[i],arr[j]]=[arr[j],arr[i]];
-  }
+  for(let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}
 }
 
-// ──────────────────────────────────────────────
-function renderJogos(jogos, tentativas, falhas){
+// ══════════════════════════════════════════════
+//  RENDER JOGOS — com análise dos 9 filtros
+// ══════════════════════════════════════════════
+function renderJogos(jogos,tentativas,falhas){
   const c=document.getElementById('jogos-container');
   c.innerHTML='';
-
-  // Info de eficiência
   const ef=Math.round((jogos.length/(tentativas||1))*100);
   const info=document.createElement('div');
   info.style.cssText='font-size:10px;color:var(--muted);margin-bottom:14px;text-align:center';
@@ -653,20 +702,19 @@ function renderJogos(jogos, tentativas, falhas){
   c.appendChild(info);
 
   jogos.forEach((jogo,i)=>{
-    const pares   = jogo.filter(n=>n%2===0).length;
-    const primos  = jogo.filter(n=>PRIMOS.includes(n)).length;
-    const t1      = jogo.filter(n=>TIER1.includes(n)).length;
-    const soma    = jogo.reduce((a,b)=>a+b,0);
+    const a=analisarJogo(jogo);
     const card=document.createElement('div');
     card.className='jogo-card';
     card.innerHTML=`
       <div class="jogo-header">
         <span class="jogo-num">JOGO ${String(i+1).padStart(2,'0')}</span>
         <div class="jogo-tags">
-          <span class="jogo-tag tag-hot">P${pares}/Í${jogo.length-pares}</span>
-          <span class="jogo-tag tag-bal">🔑${primos}</span>
-          <span class="jogo-tag tag-eq">🔥${t1}</span>
-          <span class="jogo-tag tag-blue">∑${soma}</span>
+          <span class="jogo-tag tag-hot">P${a.pares}/Í${15-a.pares}</span>
+          <span class="jogo-tag tag-bal">🔑${a.primos}</span>
+          <span class="jogo-tag tag-eq">🔥${a.t1}</span>
+          <span class="jogo-tag tag-blue">∑${a.soma}</span>
+          <span class="jogo-tag" style="background:rgba(139,92,246,.15);color:#A78BFA;border-color:rgba(139,92,246,.3)">🌀${a.fibs}</span>
+          <span class="jogo-tag" style="background:rgba(59,130,246,.12);color:#60A5FA;border-color:rgba(59,130,246,.3)">M${a.moldura}</span>
         </div>
       </div>
       <div class="balls-row">
@@ -675,7 +723,6 @@ function renderJogos(jogos, tentativas, falhas){
     c.appendChild(card);
   });
 
-  // Botão salvar
   const btnS=document.createElement('button');
   btnS.style.cssText='width:100%;padding:14px;background:rgba(34,197,94,.15);border:1.5px solid rgba(34,197,94,.4);border-radius:10px;color:#22C55E;font-size:14px;font-weight:800;cursor:pointer;margin-top:8px;letter-spacing:1px;font-family:Inter,sans-serif';
   btnS.textContent='💾 SALVAR TODOS OS JOGOS';
@@ -683,9 +730,6 @@ function renderJogos(jogos, tentativas, falhas){
   c.appendChild(btnS);
 }
 
-// ══════════════════════════════════════════════
-//  CONFERIR
-// ══════════════════════════════════════════════
 function buildDezGrid(){
   const g=document.getElementById('dez-grid');
   if(g.children.length) return;
@@ -825,6 +869,7 @@ function renderEbook(){
 }
 
 // ── INIT ──
+carregarUltimoResultado();
 atualizarPreco();
 atualizarFiltroInfo('m14');
 
